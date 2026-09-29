@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>پنل مدیریت — آزمون شبنم</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Tahoma,sans-serif;background:#12091a;color:#fff}
+.wrap{max-width:1050px;margin:auto;padding:25px 15px}
+.box{background:#211126;border:1px solid #ffffff18;border-radius:20px;padding:20px;margin-bottom:15px}
+h1{margin-top:0}.muted{color:#bdaebe;font-size:13px}.row{display:flex;gap:10px;flex-wrap:wrap}
+input,button{font:inherit;border-radius:12px;padding:12px;border:1px solid #ffffff20}
+input{background:#100914;color:#fff;flex:1;min-width:230px}
+button{background:#ff4f91;color:#fff;border:0;font-weight:bold;cursor:pointer}
+.stat{display:inline-block;min-width:180px;margin:5px;padding:16px;background:#ffffff08;border-radius:15px}
+table{width:100%;border-collapse:collapse;margin-top:15px;font-size:13px}
+th,td{padding:11px;border-bottom:1px solid #ffffff10;text-align:right;vertical-align:top}
+.badge{padding:5px 9px;border-radius:20px;background:#ffffff10}
+.answer{margin:5px 0;padding:9px;border-radius:10px;background:#ffffff08}
+.error{color:#ff9ebd;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="box">
+    <h1>پنل مدیریت 🌸</h1>
+    <p class="muted">آمار ناشناس آزمون «برای شبنم». این صفحه باید با توکن مدیریتی Cloudflare Worker استفاده شود.</p>
+    <div class="row">
+      <input id="token" type="password" placeholder="ADMIN_TOKEN">
+      <button onclick="loadData()">مشاهده اطلاعات</button>
+    </div>
+    <div id="msg"></div>
+  </div>
+
+  <div id="stats" class="box" style="display:none"></div>
+  <div id="data" class="box" style="display:none"></div>
+</div>
+
+<script>
+const WORKER_URL="https://YOUR-WORKER.workers.dev";
+
+async function loadData(){
+  const token=document.getElementById("token").value.trim();
+  const msg=document.getElementById("msg");
+  msg.textContent="در حال دریافت...";
+  try{
+    const r=await fetch(WORKER_URL+"/api/admin",{
+      headers:{Authorization:"Bearer "+token}
+    });
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||"خطا");
+    render(d);
+    msg.textContent="";
+  }catch(e){
+    msg.innerHTML='<div class="error">خطا: '+escapeHtml(e.message)+'</div>';
+  }
+}
+
+function render(d){
+  document.getElementById("stats").style.display="block";
+  document.getElementById("data").style.display="block";
+  const completed=d.sessions.filter(x=>x.completed).length;
+  const viewed=d.sessions.filter(x=>x.viewed).length;
+  document.getElementById("stats").innerHTML=`
+    <div class="stat"><b>بازدیدها</b><br>${viewed}</div>
+    <div class="stat"><b>تکمیل آزمون</b><br>${completed}</div>
+    <div class="stat"><b>جلسه‌های ثبت‌شده</b><br>${d.count}</div>`;
+
+  let html=`<h2>جزئیات</h2><table><thead><tr>
+    <th>وضعیت</th><th>اولین مشاهده</th><th>آخرین فعالیت</th><th>جواب‌ها</th>
+  </tr></thead><tbody>`;
+
+  for(const s of d.sessions){
+    const answers=(s.answers||[]).map(a=>`
+      <div class="answer">
+        <b>سؤال ${a.question}:</b> ${escapeHtml(a.optionText)}
+        <div class="muted">${escapeHtml(a.questionText)}</div>
+      </div>`).join("");
+    html+=`<tr>
+      <td><span class="badge">${s.completed?"آزمون کامل شده ✓":"دیده شده"}</span></td>
+      <td>${fmt(s.firstSeen)}</td>
+      <td>${fmt(s.lastSeen)}</td>
+      <td>${answers||"هنوز جوابی ثبت نشده"}</td>
+    </tr>`;
+  }
+  html+="</tbody></table>";
+  document.getElementById("data").innerHTML=html;
+}
+function fmt(x){return new Date(x).toLocaleString("fa-IR")}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+</script>
+</body>
+</html>
