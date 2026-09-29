@@ -215,7 +215,7 @@ renderStart();
    بعد از Deploy کردن Worker، آدرس آن را اینجا بگذار.
 */
 const ANALYTICS_CONFIG = {
-  workerUrl: "https://YOUR-WORKER.workers.dev",
+  workerUrl: "https://shanbam-api.salhamir146.workers.dev",
   enabled: true
 };
 
@@ -251,36 +251,26 @@ async function track(event, data={}){
   }
 }
 
-function showConsent(){
+function showNote(){
   const box=document.createElement("div");
-  box.id="analyticsConsent";
   box.innerHTML=`
     <div style="position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;
-      background:rgba(25,12,29,.96);border:1px solid rgba(255,170,200,.25);
-      border-radius:18px;padding:16px;color:#fff;box-shadow:0 15px 50px #0008;
-      font-family:Vazirmatn,sans-serif;text-align:right">
-      <div style="font-weight:800;margin-bottom:7px">یک نکته کوچک 🌷</div>
-      <div style="font-size:12px;line-height:1.9;color:#eadbe7">
-        برای اینکه سازنده بفهمد صفحه دیده شده و جواب‌های همین آزمون ثبت شوند،
-        یک شناسه تصادفی و پاسخ‌های انتخاب‌شده ذخیره می‌شود؛ اطلاعاتی مثل نام،
-        شماره تلفن یا موقعیت مکانی جمع‌آوری نمی‌شود.
-      </div>
-      <button id="allowAnalytics" style="margin-top:11px;width:100%;border:0;border-radius:13px;
-        padding:11px;background:linear-gradient(135deg,#ff4f91,#9d68ff);color:white;
-        font-family:inherit;font-weight:700">باشه، ادامه می‌دم ♥</button>
+      background:rgba(25,12,29,.92);border:1px solid rgba(255,170,200,.25);
+      border-radius:16px;padding:11px 14px;color:#eadbe7;font-size:12px;line-height:1.9;
+      font-family:Vazirmatn,sans-serif;text-align:center;transition:opacity .8s">
+     💗
     </div>`;
   document.body.appendChild(box);
-  document.getElementById("allowAnalytics").onclick=async()=>{
-    analyticsConsent=true;
-    localStorage.setItem("shanbam_analytics_consent","yes");
-    box.remove();
-    await track("page_view",{});
-  };
+  setTimeout(()=>{box.firstElementChild.style.opacity="0";},4500);
+  setTimeout(()=>box.remove(),5500);
 }
 
-analyticsConsent = localStorage.getItem("shanbam_analytics_consent")==="yes";
-if(analyticsConsent) track("page_view",{});
-else setTimeout(showConsent,300);
+analyticsConsent = true;
+track("page_view",{});
+if(!localStorage.getItem("shanbam_note_seen")){
+  localStorage.setItem("shanbam_note_seen","yes");
+  setTimeout(showNote,400);
+}
 
 /* Wrap the existing answer functions so selected answers are recorded. */
 const originalChoose = choose;
